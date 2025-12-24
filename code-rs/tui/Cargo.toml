@@ -43,6 +43,7 @@ code-login = { path = "../login" }
 code-ollama = { path = "../ollama" }
 code-protocol = { path = "../protocol" }
 code-version = { path = "../code-version" }
+optillm-mars = { workspace = true }
 code-cloud-tasks-client = { path = "../cloud-tasks-client", features = ["mock"] }
 code-auto-drive-diagnostics = { path = "../code-auto-drive-diagnostics" }
 code-auto-drive-core = { workspace = true }

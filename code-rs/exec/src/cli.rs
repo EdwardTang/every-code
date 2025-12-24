@@ -31,6 +31,10 @@ pub struct Cli {
     #[arg(long, short = 'm')]
     pub model: Option<String>,
 
+    /// Enable MARS multi-agent reasoning optimization.
+    #[arg(long = "mars", default_value_t = false)]
+    pub mars: bool,
+
     #[arg(long = "oss", default_value_t = false)]
     pub oss: bool,
 

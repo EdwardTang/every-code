@@ -1,0 +1,3 @@
+[submodule "code-rs/optillm"]
+	path = code-rs/optillm
+	url = https://github.com/EdwardTang/optillm-rs

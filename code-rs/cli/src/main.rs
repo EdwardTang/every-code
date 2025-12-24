@@ -17,6 +17,7 @@ use code_cli::login::run_login_with_device_code;
 use code_cli::login::run_logout;
 mod bridge;
 mod llm;
+mod mars;
 use llm::{LlmCli, run_llm};
 use code_common::CliConfigOverrides;
 use code_core::{entry_to_rollout_path, SessionCatalog, SessionQuery};
@@ -91,6 +92,12 @@ struct MultitoolCli {
     /// Developer-role message to prepend to every turn for demos.
     #[clap(long = "demo", global = true, value_name = "TEXT")]
     demo_developer_message: Option<String>,
+
+    /// Enable MARS multi-agent reasoning optimization.
+    ///
+    /// Currently only affects interactive sessions.
+    #[clap(long = "mars", global = true, default_value_t = false)]
+    mars: bool,
 
     #[clap(subcommand)]
     subcommand: Option<Subcommand>,
@@ -411,11 +418,13 @@ async fn cli_main(code_linux_sandbox_exe: Option<PathBuf>) -> anyhow::Result<()>
         mut interactive,
         auto_drive,
         demo_developer_message,
+        mars,
         subcommand,
     } = MultitoolCli::parse();
 
     interactive.finalize_defaults();
     interactive.demo_developer_message = demo_developer_message.clone();
+    interactive.mars = mars;
 
     match subcommand {
         None => {

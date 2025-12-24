@@ -24,6 +24,12 @@ pub struct Cli {
     #[arg(long, short = 'm')]
     pub model: Option<String>,
 
+    /// Enable MARS multi-agent reasoning optimization.
+    ///
+    /// For now, this only affects the interactive TUI session.
+    #[arg(long = "mars", default_value_t = false)]
+    pub mars: bool,
+
     /// Convenience flag to select the local open source model provider.
     /// Equivalent to -c model_provider=oss; verifies a local Ollama server is
     /// running.

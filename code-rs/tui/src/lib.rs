@@ -85,6 +85,7 @@ pub mod onboarding;
 pub mod public_widgets;
 mod render;
 mod model_migration;
+mod mars;
 // mod scroll_view; // Orphaned after trait-based HistoryCell migration
 mod session_log;
 mod shimmer;

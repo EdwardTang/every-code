@@ -95,6 +95,7 @@ pub async fn run_main(cli: Cli, code_linux_sandbox_exe: Option<PathBuf>) -> anyh
         command,
         images,
         model: model_cli_arg,
+        mars,
         oss,
         config_profile,
         full_auto,
@@ -116,6 +117,10 @@ pub async fn run_main(cli: Cli, code_linux_sandbox_exe: Option<PathBuf>) -> anyh
         review_output_json,
         ..
     } = cli;
+
+    if mars {
+        anyhow::bail!("--mars is not yet supported for non-interactive exec runs");
+    }
 
     let run_deadline = max_seconds.map(|seconds| Instant::now() + Duration::from_secs(seconds));
     let run_deadline_std = run_deadline.map(|deadline| deadline.into_std());

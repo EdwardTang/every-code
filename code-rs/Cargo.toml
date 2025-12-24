@@ -34,6 +34,10 @@ members = [
     "git-apply",
     "utils/json-to-toml",
     "utils/readiness",
+    # optillm integration (MARS multi-agent reasoning)
+    "optillm/crates/core",
+    "optillm/crates/mars",
+    "optillm/crates/cli",
 ]
 resolver = "2"
 
@@ -81,6 +85,11 @@ code-utils-readiness = { path = "utils/readiness" }
 code-auto-drive-core = { path = "code-auto-drive-core" }
 mcp-types = { path = "mcp-types", package = "code-mcp-types" }
 upstream-mcp-types = { git = "https://github.com/openai/codex.git", package = "mcp-types", rev = "6c384eb9c610f9a83037d9cad120fb792e782c7c" }
+
+# optillm integration (MARS multi-agent reasoning)
+optillm-core = { path = "optillm/crates/core" }
+optillm-mars = { path = "optillm/crates/mars" }
+optillm-cli = { path = "optillm/crates/cli" }
 
 # External
 allocative = "0.3.3"
