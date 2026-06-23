@@ -146,7 +146,7 @@ impl ViewImageHandler {
                 turn_environment.cwd(),
             ))
         })?;
-        let model_visible_path = path_uri.inferred_native_path_string();
+        let display_path = path_uri.inferred_native_path_string();
         let sandbox = turn.file_system_sandbox_context(
             /*additional_permissions*/ None,
             turn_environment.cwd(),
@@ -158,13 +158,13 @@ impl ViewImageHandler {
             .await
             .map_err(|error| {
                 FunctionCallError::RespondToModel(format!(
-                    "unable to locate image at `{model_visible_path}`: {error}"
+                    "unable to locate image at `{display_path}`: {error}"
                 ))
             })?;
 
         if !metadata.is_file {
             return Err(FunctionCallError::RespondToModel(format!(
-                "image path `{model_visible_path}` is not a file"
+                "image path `{display_path}` is not a file"
             )));
         }
         let file_bytes = fs
@@ -172,7 +172,7 @@ impl ViewImageHandler {
             .await
             .map_err(|error| {
                 FunctionCallError::RespondToModel(format!(
-                    "unable to read image at `{model_visible_path}`: {error}"
+                    "unable to read image at `{display_path}`: {error}"
                 ))
             })?;
 
