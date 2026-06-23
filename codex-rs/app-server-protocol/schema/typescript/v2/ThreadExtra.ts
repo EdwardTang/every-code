@@ -5,4 +5,4 @@
 /**
  * Extra app-server data for a thread.
  */
-export type ThreadExtra = Record<string, never>;
+export type ThreadExtra = { [key in string]?: import("../serde_json/JsonValue").JsonValue };

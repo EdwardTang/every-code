@@ -86,6 +86,29 @@ fn thread_sources_round_trip_as_scalar_labels() {
 }
 
 #[test]
+fn thread_extra_round_trips_metadata_fields() {
+    let extra = ThreadExtra(BTreeMap::from([
+        ("foo".to_string(), json!("bar")),
+        ("nested".to_string(), json!({ "enabled": true })),
+    ]));
+
+    let value = serde_json::to_value(&extra).expect("serialize thread extra");
+    assert_eq!(
+        value,
+        json!({
+            "foo": "bar",
+            "nested": {
+                "enabled": true,
+            },
+        })
+    );
+    assert_eq!(
+        serde_json::from_value::<ThreadExtra>(value).expect("deserialize thread extra"),
+        extra
+    );
+}
+
+#[test]
 fn approvals_reviewer_serializes_auto_review_and_accepts_legacy_guardian_subagent() {
     assert_eq!(
         serde_json::to_string(&ApprovalsReviewer::User).expect("serialize reviewer"),

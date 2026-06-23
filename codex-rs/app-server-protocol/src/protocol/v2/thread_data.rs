@@ -12,6 +12,8 @@ use schemars::r#gen::SchemaGenerator;
 use schemars::schema::Schema;
 use serde::Deserialize;
 use serde::Serialize;
+use serde_json::Value as JsonValue;
+use std::collections::BTreeMap;
 use std::path::PathBuf;
 use thiserror::Error;
 use ts_rs::TS;
@@ -123,9 +125,12 @@ impl From<ThreadSource> for CoreThreadSource {
 
 /// Extra app-server data for a thread.
 #[derive(Serialize, Deserialize, Debug, Clone, PartialEq, Eq, JsonSchema, TS)]
-#[serde(rename_all = "camelCase")]
-#[ts(rename_all = "camelCase", export_to = "v2/")]
-pub struct ThreadExtra {}
+#[serde(transparent)]
+#[ts(
+    type = "{ [key in string]?: import(\"../serde_json/JsonValue\").JsonValue }",
+    export_to = "v2/"
+)]
+pub struct ThreadExtra(pub BTreeMap<String, JsonValue>);
 
 #[derive(Serialize, Deserialize, Debug, Clone, PartialEq, Eq, JsonSchema, TS)]
 #[serde(rename_all = "camelCase")]
