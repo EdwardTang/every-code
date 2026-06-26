@@ -18,6 +18,7 @@ use codex_code_mode_protocol::host::EncodedFrame;
 use codex_code_mode_protocol::host::FramedReader;
 use codex_code_mode_protocol::host::FramedWriter;
 use codex_code_mode_protocol::host::HostToClient;
+use codex_code_mode_protocol::host::MAX_FRAME_BYTES;
 use codex_code_mode_protocol::host::ProtocolVersion;
 use codex_code_mode_protocol::host::RequestId;
 use codex_code_mode_protocol::host::SupportedProtocolVersions;
@@ -43,8 +44,19 @@ use self::reader::drive_reader;
 mod driver;
 mod reader;
 
-const IPC_CHANNEL_CAPACITY: usize = 128;
+const IPC_COMMAND_CHANNEL_CAPACITY: usize = 128;
+const IPC_MAX_QUEUED_FRAME_BYTES: usize = 128 * 1024 * 1024;
+const IPC_FRAME_CHANNEL_CAPACITY: usize = frame_channel_capacity(IPC_MAX_QUEUED_FRAME_BYTES);
 const HOST_HANDSHAKE_TIMEOUT: Duration = Duration::from_secs(10);
+const _: () = {
+    assert!(IPC_FRAME_CHANNEL_CAPACITY > 0);
+    assert!(IPC_FRAME_CHANNEL_CAPACITY * MAX_FRAME_BYTES <= IPC_MAX_QUEUED_FRAME_BYTES);
+};
+
+const fn frame_channel_capacity(max_queued_bytes: usize) -> usize {
+    let capacity = max_queued_bytes / MAX_FRAME_BYTES;
+    if capacity == 0 { 1 } else { capacity }
+}
 
 pub(super) struct Connection {
     command_tx: mpsc::Sender<DriverCommand>,
@@ -182,9 +194,10 @@ impl Connection {
             return Err(err);
         }
 
-        let (command_tx, command_rx) = mpsc::channel(IPC_CHANNEL_CAPACITY);
-        let (event_tx, event_rx) = mpsc::channel(IPC_CHANNEL_CAPACITY);
-        let (outgoing_tx, mut outgoing_rx) = mpsc::channel::<EncodedFrame>(IPC_CHANNEL_CAPACITY);
+        let (command_tx, command_rx) = mpsc::channel(IPC_COMMAND_CHANNEL_CAPACITY);
+        let (event_tx, event_rx) = mpsc::channel(IPC_FRAME_CHANNEL_CAPACITY);
+        let (outgoing_tx, mut outgoing_rx) =
+            mpsc::channel::<EncodedFrame>(IPC_FRAME_CHANNEL_CAPACITY);
         let cancellation = CancellationToken::new();
         let alive = Arc::new(AtomicBool::new(true));
         let failure = Arc::new(std::sync::Mutex::new(None));
