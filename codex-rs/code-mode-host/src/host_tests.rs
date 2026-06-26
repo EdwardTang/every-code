@@ -10,6 +10,7 @@ use codex_code_mode_protocol::host::HostHello;
 use codex_code_mode_protocol::host::HostRequest;
 use codex_code_mode_protocol::host::HostResponse;
 use codex_code_mode_protocol::host::HostToClient;
+use codex_code_mode_protocol::host::MAX_FRAME_BYTES;
 use codex_code_mode_protocol::host::ProtocolVersion;
 use codex_code_mode_protocol::host::RequestId;
 use codex_code_mode_protocol::host::SessionId;
@@ -301,6 +302,53 @@ async fn session_id_cannot_be_reused_after_shutdown() {
     drop(writer);
     drop(reader);
     host.await.expect("host task").expect("host connection");
+}
+
+#[tokio::test]
+async fn oversized_session_ready_does_not_open_session() {
+    let (outgoing_tx, mut outgoing_rx) = mpsc::channel(/*max_capacity*/ 1);
+    let peer = Arc::new(HostPeer::new(outgoing_tx));
+    let state = HostState {
+        sessions: Mutex::new(HashMap::new()),
+        seen_session_ids: Mutex::new(SeenSessionIds::default()),
+        requests: Mutex::new(RequestRegistry::default()),
+        request_tasks: TaskTracker::new(),
+        request_permits: Arc::new(Semaphore::new(MAX_IN_FLIGHT_REQUESTS)),
+        active_cell_permits: Arc::new(Semaphore::new(MAX_ACTIVE_CELLS)),
+        closing: AtomicBool::new(false),
+        peer,
+    };
+    let session_id =
+        SessionId::new("s".repeat(MAX_FRAME_BYTES)).expect("near-frame-limit session ID");
+    let request_id = request_id(/*value*/ 1);
+
+    state
+        .handle_request(
+            request_id,
+            HostRequest::OpenSession {
+                session_id: session_id.clone(),
+            },
+            CancellationToken::new(),
+        )
+        .await;
+
+    let response = decode_frame(outgoing_rx.recv().await.expect("session response frame")).await;
+    let HostToClient::Response {
+        id,
+        result: WireResult::Err { message },
+    } = response
+    else {
+        panic!("expected oversized response error");
+    };
+    assert_eq!(id, request_id);
+    assert!(message.contains("exceeds the IPC frame limit"));
+    assert!(
+        !state
+            .sessions
+            .lock()
+            .unwrap_or_else(PoisonError::into_inner)
+            .contains_key(&session_id)
+    );
 }
 
 #[test]

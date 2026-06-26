@@ -25,6 +25,7 @@ use codex_code_mode_protocol::host::ProtocolVersion;
 use codex_code_mode_protocol::host::RequestId;
 use codex_code_mode_protocol::host::SessionId;
 use codex_code_mode_protocol::host::SupportedProtocolVersions;
+use codex_code_mode_protocol::host::WireResult;
 use tokio::io::AsyncRead;
 use tokio::io::AsyncWrite;
 use tokio::sync::Semaphore;
@@ -289,9 +290,16 @@ impl HostState {
         }
         match request {
             HostRequest::OpenSession { session_id } => {
-                let result = self
-                    .open_session(session_id.clone())
-                    .map(|()| HostResponse::SessionReady { session_id });
+                let result = self.ensure_response_fits(
+                    request_id,
+                    HostResponse::SessionReady {
+                        session_id: session_id.clone(),
+                    },
+                );
+                let result = result.and_then(|()| {
+                    self.open_session(session_id.clone())
+                        .map(|()| HostResponse::SessionReady { session_id })
+                });
                 self.respond(request_id, result);
             }
             HostRequest::Execute {
@@ -453,6 +461,15 @@ impl HostState {
             .get(session_id)
             .cloned()
             .ok_or_else(|| format!("unknown code-mode session {session_id}"))
+    }
+
+    fn ensure_response_fits(&self, id: RequestId, value: HostResponse) -> Result<(), String> {
+        EncodedFrame::encode(&HostToClient::Response {
+            id,
+            result: WireResult::Ok { value },
+        })
+        .map(|_| ())
+        .map_err(|err| format!("code-mode host response exceeds the IPC frame limit: {err}"))
     }
 
     fn respond(&self, id: RequestId, result: Result<HostResponse, String>) {
